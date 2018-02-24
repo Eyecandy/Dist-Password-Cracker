@@ -7,9 +7,8 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
-import server.WebServer.system
-import server.WorkerConnectionActor.{GetIdleStatus, Register, SendJobToWorkerClient}
-
+import server.DispatchServer.system
+import server.WorkerConnection.{Ping, Register, SendJobToWorkerClient}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
@@ -20,8 +19,7 @@ import scala.util.{Failure, Success, Try}
     - !!!!Should be able to get and set idle status!!!!
     - !!!Should be able to set and get from and to (range)!!!
  */
-class WorkerConnectionActor extends  Actor{
-
+class WorkerConnection extends  Actor{
   var nodeName_ =""
   var range = Range("","")
   var idle = true
@@ -34,18 +32,20 @@ class WorkerConnectionActor extends  Actor{
       currentPasswordJob = password
       range = Range(from,to)
       idle = false
-      WorkerConnectionActor.httpRequestWorkerClient(SendJobToWorkerClient(password,from,to),nodeName_,self)
+      log.info(s"Dispatcher assigns ${nodeName_} the job: psw: ${password} & range:${from}-${to}")
+      WorkerConnection.httpRequestWorkerClient(SendJobToWorkerClient(password,from,to),nodeName_,self)
     }
-    case GetIdleStatus() => idle
+    case Ping() => WorkerConnection.httpRequestWorkerClientPing(nodeName_)
+
   }
 }
 
-object WorkerConnectionActor {
+object WorkerConnection {
 
-def props = Props(new WorkerConnectionActor)
+def props = Props(new WorkerConnection)
   case class SendJobToWorkerClient(password:String, from:String, to:String)
   case class Register(nodeName:String)
-  case class GetIdleStatus()
+  case class Ping()
   implicit val materializer = ActorMaterializer()
   implicit val dispatcher = system.dispatcher
   val port = 8081
@@ -56,12 +56,10 @@ def props = Props(new WorkerConnectionActor)
     responseFuture
       .onComplete {
         case Success(res) => {
-          println(res)
           val marshalFuture: Future[String] = Unmarshal(res.entity).to[String]
           val marshalResult: Option[Try[String]] = marshalFuture.value
           if (marshalResult.isDefined && marshalResult.get.isSuccess) {
-            println(marshalResult.get.get)
-            WebServer.superVisorActor ! SupervisorActor.ReportJobCompletion(marshalResult.get.get,worker)
+            DispatchServer.superVisorActor ! SuperVisor.ReportJobCompletion(marshalResult.get.get,worker)
           }
           else {
             throw new Exception("Marshalling failed & you might need to redo this job")
@@ -70,18 +68,15 @@ def props = Props(new WorkerConnectionActor)
         case Failure(_) => sys.error("something wrong")
       }
   }
-  /*
-  Ping worker at schedule
-   */
-  /*
-  def httpRequestWorkerClientPing(send:Send,nodeName:String,worker:ActorRef): Unit = {
+
+
+  def httpRequestWorkerClientPing(nodeName:String): Unit = {
     val workerAddress = s"http://${nodeName}:${port}/worker-client-ping"
     val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = workerAddress))
     responseFuture
       .onComplete {
-
-
+        case Success(res) => println(res)
+        case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
       }
   }
-  */
 }

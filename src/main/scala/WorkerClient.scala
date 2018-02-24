@@ -1,13 +1,21 @@
-import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives.{complete, get, parameters, path}
+
+import scala.concurrent.Future
+import java.net._
+
+import akka.actor.ActorSystem
+import akka.event.Logging
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import scala.concurrent.Future
+
 import scala.io.StdIn
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
-import java.net._
+import akka.http.scaladsl.server.Directives._
+
+import scala.language.postfixOps
 /*
 What the worker does:
   - Opens http port for server
@@ -16,7 +24,7 @@ What the worker does:
   - Receives ping from server and responds to it.
  */
 
-object Worker extends App {
+object WorkerClient extends App {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
@@ -32,14 +40,19 @@ object Worker extends App {
     get {
       path("worker-client") {
         parameters("password","from","to")  { (password,from,to) =>
+          println("ack job")
           complete(callCracker(password,from,to))
         }
-      }
+      } ~
+        path("worker-client-ping") {
+          println("Worker Pinged")
+          complete(s"Worker: ${localIpAddress} Pinged Successfully")
+        }
     }
   }
   def callCracker(password:String,from:String,to:String): String = {
-    println(s"callCracker called with  ${from}, ${to}")
-    Thread.sleep(5000)
+    println(s"Received Cracker Job: Password: ${password} & Range: ${from} - ${to}")
+    //Thread.sleep(10000)
     return s"cracker is done with this result: ${from}, ${to}"
   }
 

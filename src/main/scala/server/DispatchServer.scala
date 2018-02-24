@@ -17,7 +17,7 @@ import server.SuperVisor.WorkerRequestToJoin
     - Opens a port for clients to connect to.
  */
 
-object WebServer extends App {
+object DispatchServer extends App {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   implicit val dispatcher = system.dispatcher

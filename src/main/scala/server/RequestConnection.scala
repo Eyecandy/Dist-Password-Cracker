@@ -3,7 +3,7 @@ package server
 import akka.actor
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.event.Logging
-import server.WorkerConnectionActor.SendJobToWorkerClient
+import server.WorkerConnection.SendJobToWorkerClient
 
 
 /*
@@ -13,11 +13,11 @@ import server.WorkerConnectionActor.SendJobToWorkerClient
     - Is scheduled by SuperVisorActor to check last time pinged vs currentTime.
  */
 
-class RequestConnectionActor(nodeName: String, password: String, pingTime: Long) extends Actor {
-  val range = Range("AAAAAAAAA","AABAAAAA")
+class RequestConnection(nodeName: String, password: String, pingTime: Long) extends Actor {
+  var range = Range("AAAAAAAAA","AABAAAAA")
   var lastPingTime = pingTime;
   val log = Logging(context.system, this)
-  import RequestConnectionActor._
+  import RequestConnection._
 
   override def receive: Receive = {
 
@@ -29,13 +29,21 @@ class RequestConnectionActor(nodeName: String, password: String, pingTime: Long)
       }
     }
     case ping() => lastPingTime = System.currentTimeMillis()
-    case WorkerReadyForWork(worker) => worker ! SendJobToWorkerClient(password,range.from,range.to)
+    case WorkerReadyForWork(worker) =>
+      log.info("job is sent to workerConnection")
+      worker ! SendJobToWorkerClient(password,range.from,range.to)
+      val newTo = RangeUpdater.start(range.to)
+      newTo.isDefined match {
+        case true => range = Range(range.to,newTo.get)
+        case false => log.error("RangeUpdate FAILED, NONE Value returned")
+      }
+
     case _ => throw new Exception("Don't understand what is being sent to me!!")
   }
 }
 
-object RequestConnectionActor {
-  def props(nodeName: String, password: String, datetime: Long): actor.Props = Props(new RequestConnectionActor(nodeName, password, datetime))
+object RequestConnection {
+  def props(nodeName: String, password: String, datetime: Long): actor.Props = Props(new RequestConnection(nodeName, password, datetime))
   case class currentTime()
   case class ping()
   case class WorkerReadyForWork(worker:ActorRef)

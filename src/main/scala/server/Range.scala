@@ -1,5 +1,4 @@
 package server
 
-class Range {
+case class Range(from:String,to:String)
 
-}

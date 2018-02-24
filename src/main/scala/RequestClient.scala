@@ -13,13 +13,13 @@ what Client does:
  - Pings the server every 5 seconds .
 */
 
-object Client {
+object RequestClient {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem()
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
     val localhost: InetAddress = InetAddress.getLocalHost
-    val localIpAddress: String = localhost.getHostAddress
+    val localIpAddress = localhost.getHostAddress
     val serverHostname = "localhost"
     val serverPort = "8080"
     val name = localIpAddress

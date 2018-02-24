@@ -1,6 +1,6 @@
 package server
 
-object Range extends App{
+object RangeUpdater extends App{
   def start(range:String): Option[String]= {
     var end = false
     val vec = range.toVector

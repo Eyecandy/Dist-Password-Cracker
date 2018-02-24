@@ -2,8 +2,9 @@ package server
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
-import server.WorkerConnectionActor.{Register}
-import WebServer._
+import server.WorkerConnection.{ Register}
+import DispatchServer._
+import scala.concurrent.duration._
 
 import scala.collection.mutable
 
@@ -15,34 +16,35 @@ import scala.collection.mutable
     -
  */
 
-class SupervisorActor extends Actor {
-  import server.SupervisorActor._
+class SuperVisor extends Actor {
+  import server.SuperVisor._
   val log = Logging(context.system, this)
-  val idleWorkers = List(ActorRef)
+  var idleWorkers = List[ActorRef]()
 
   override def receive: Receive = {
     case WorkerRequestToJoin(nodeName) => {
-      println("worker Actor created in supervisor")
-      val worker: ActorRef = context.actorOf(WorkerConnectionActor.props,nodeName)
+      log.info(s"${nodeName} Requests to join DispatchServer")
+      val worker: ActorRef = context.actorOf(WorkerConnection.props,nodeName)
       worker ! Register(nodeName)
-      requestConnectionQueueActor ! RequestConnectionQueueActor.LookingForJob(worker)
+      system.scheduler.schedule(5 seconds,5 seconds,worker,WorkerConnection.Ping())
+      requestConnectionManager ! RequestConnectionManager.LookingForJob(worker)
     }
-    case QueueWorkerAsIdle(worker:ActorRef) => worker::idleWorkers
+    case QueueWorkerAsIdle(worker:ActorRef) => idleWorkers = worker :: idleWorkers
     case ReportJobCompletion(result:String,worker:ActorRef)  => {
-      log.info("job completed reported")
+      requestConnectionManager ! RequestConnectionManager.LookingForJob(worker)
+    }
+    case FindMeAWorker(requestConnection) => {
+      idleWorkers.foreach(
+        (worker => requestConnection ! RequestConnection.WorkerReadyForWork(worker)))
     }
   }
 }
 
-object SupervisorActor {
+object SuperVisor {
   val workerQueue = mutable.Queue[ActorRef]()
-  val singletonSuperVisorActor = system.actorOf(Props(new SupervisorActor()),"SuperVisorActor")
+  val singletonSuperVisorActor = system.actorOf(Props(new SuperVisor()),"SuperVisor")
   case class WorkerRequestToJoin(nodeName: String)
   case class ReportJobCompletion(result:String,worker:ActorRef)
-  case class FindMeAWorker(requestConnectionActor: ActorRef)
+  case class FindMeAWorker(requestConnection: ActorRef)
   case class QueueWorkerAsIdle(worker:ActorRef)
-
-
-
-
 }
