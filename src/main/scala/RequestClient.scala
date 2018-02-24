@@ -7,6 +7,12 @@ import java.net._
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
+/*
+what Client does:
+ - Sends the ip of the node it is running to the server.
+ - Pings the server every 5 seconds .
+*/
+
 object Client {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem()

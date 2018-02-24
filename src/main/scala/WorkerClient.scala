@@ -8,6 +8,13 @@ import scala.concurrent.Future
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 import java.net._
+/*
+What the worker does:
+  - Opens http port for server
+  - Receives password to crack and the range to work on and then responds with found or not found.
+  - Calls C program cracker. The cracker does the actual job of cracking and returns the result to ther worker.
+  - Receives ping from server and responds to it.
+ */
 
 object Worker extends App {
   implicit val system = ActorSystem()
@@ -20,26 +27,20 @@ object Worker extends App {
   val serverPort = 8080
   val name = localIpAddress
   val serverAddress = s"http://${serverHostname}:${serverPort}/worker-client?nodeName=${name}"
-  val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = serverAddress ))
-  responseFuture
-    .onComplete {
-      case Success(res) => println(res)
-      case Failure(_) => sys.error("something wrong")
-    }
+
   val route:Route = {
     get {
       path("worker-client") {
         parameters("password","from","to")  { (password,from,to) =>
-          println(from,to)
           complete(callCracker(password,from,to))
         }
       }
     }
   }
   def callCracker(password:String,from:String,to:String): String = {
-    println("callCracker called")
-    Thread.sleep(1)
-    return "cracker is done with this result: blah blah"
+    println(s"callCracker called with  ${from}, ${to}")
+    Thread.sleep(5000)
+    return s"cracker is done with this result: ${from}, ${to}"
   }
 
   Http().bindAndHandleAsync(Route.asyncHandler(route), localIpAddress, workerPort)
@@ -53,4 +54,12 @@ object Worker extends App {
         e.printStackTrace
         system.terminate()
     }
+
+  val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = serverAddress ))
+  responseFuture
+    .onComplete {
+      case Success(res) => println(res)
+      case Failure(_) => sys.error("something wrong")
+    }
+
 }

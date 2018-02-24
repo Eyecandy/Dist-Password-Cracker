@@ -1,41 +1,44 @@
 package server
 
-import akka.actor.{ActorRef, ActorSelection, ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSelection, ActorSystem}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{DateTime, _}
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-
 import scala.io.StdIn
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
-import scala.concurrent.duration._
 import akka.http.scaladsl.server.Directives._
-import server.SupervisorWorkerActor.workerConnection
-
+import server.SuperVisor.WorkerRequestToJoin
+/*
+  What the WebServer does:
+    - Receives request-client connections and creates RequestActor.
+    And Schedules a "current time vs last ping time check" for each requestActor.
+    - Receives worker-client connections and sends the IP to the SuperVisor Actor.
+    - Opens a port for clients to connect to.
+ */
 
 object WebServer extends App {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   implicit val dispatcher = system.dispatcher
-  val superVisorWorkerActor: ActorRef = system.actorOf(SupervisorWorkerActor.props)
+  val superVisorActor: ActorRef = SuperVisor.singletonSuperVisorActor
+  val requestConnectionManager: ActorRef =  RequestConnectionManager.singletonRequestConnectionManger
   val route: Route = {
     get {
       path("request-client") {
         parameters("nodeName", "password") { (nodeName, password) ⇒
-          val requestClientActor: ActorRef = system.actorOf(RequestActor.props(nodeName, password, System.currentTimeMillis()), nodeName)
-          superVisorWorkerActor ! SupervisorWorkerActor.ClientRequest(nodeName,password)
-          system.scheduler.schedule(5 seconds, 5 seconds, requestClientActor, RequestActor.currentTime())
+          requestConnectionManager ! RequestConnectionManager.Register(nodeName,password)
           complete(s"Server registered you $nodeName and you password job: ${password}")
         } ~
           parameter("nodeName") { nodeName ⇒
-            val nodeActor: ActorSelection = system.actorSelection(s"akka://default/user/${nodeName}")
-            nodeActor ! RequestActor.ping()
+            val nodeActor: ActorSelection = system.actorSelection(s"akka://default/user/RequestConnectionManager/${nodeName}")
+            nodeActor ! RequestConnection.ping()
             complete(s"Ping (${nodeActor}) was registered by server.")
           }
       } ~
       path("worker-client") {
-        parameters("nodeName")  { (nodeName) => superVisorWorkerActor ! workerConnection(nodeName)
+        parameters("nodeName")  { (nodeName) =>
+          superVisorActor ! WorkerRequestToJoin(nodeName)
           complete(s"worker registered")
         }
       }
