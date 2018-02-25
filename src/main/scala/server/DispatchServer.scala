@@ -10,11 +10,11 @@ import scala.util.{Failure, Success}
 import akka.http.scaladsl.server.Directives._
 import server.SuperVisor.WorkerRequestToJoin
 /*
-  What the WebServer does:
-    - Receives request-client connections and creates RequestActor.
-    And Schedules a "current time vs last ping time check" for each requestActor.
-    - Receives worker-client connections and sends the IP to the SuperVisor Actor.
+  What the DispatchServer does:
     - Opens a port for clients to connect to.
+    - Receives request-client connections and forwards the information to  RequestConnectionManager.
+    - Receives worker-client connections and forwards the information  to the SuperVisor Actor.
+
  */
 
 object DispatchServer extends App {

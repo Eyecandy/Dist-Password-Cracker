@@ -1,11 +1,15 @@
 package server
 
+/*
+   Updates the range of requestConnections.
+ */
+
 object RangeUpdater extends App{
   def start(range:String): Option[String]= {
     var end = false
     val vec = range.toVector
     if (vec(0) =='9')
-      if (vec.count(x => x == '9') == 8) {
+      if (vec.mkString("").equals("999AAAAA")) {
         end = true
       }
     if (end) {

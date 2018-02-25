@@ -7,16 +7,27 @@ import server.DispatchServer.system
 import scala.collection.immutable
 import scala.concurrent.duration._
 
+/*
+  What the RequestConnectionManager does:
+    - Register:
+        Create a requestConnection actor
+        schedules to check (Last Ping Time vs Current Time)
+        Asks SuperVisor for idle workers
+    - LookingForJob:
+      Worker comes in looking for job i.e  if a requestConnection exist a job must exist
+      if it exists send worker reference to the job
+
+ */
+
 class RequestConnectionManager extends Actor {
   implicit val dispatcher = system.dispatcher
   val supervisor = SuperVisor.singletonSuperVisorActor
   val log = Logging(context.system, this)
   override def receive: Receive = {
-
     case Register(nodeName,password) =>
-      val requestClientActor: ActorRef = context.actorOf(RequestConnection.props(nodeName,password,System.currentTimeMillis()),nodeName)
-      system.scheduler.schedule(5 seconds, 5 seconds, requestClientActor, RequestConnection.currentTime())
-      supervisor ! SuperVisor.FindMeAWorker(requestClientActor)
+      val requestConnection: ActorRef = context.actorOf(RequestConnection.props(nodeName,password,System.currentTimeMillis()),nodeName)
+      system.scheduler.schedule(5 seconds, 5 seconds, requestConnection, RequestConnection.currentTime())
+      supervisor ! SuperVisor.FindMeAWorker(requestConnection)
 
     case LookingForJob(worker) =>
       val requestClients: immutable.Iterable[ActorRef] = context.children.seq

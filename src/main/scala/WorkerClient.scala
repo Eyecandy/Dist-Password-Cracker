@@ -52,7 +52,7 @@ object WorkerClient extends App {
   }
   def callCracker(password:String,from:String,to:String): String = {
     println(s"Received Cracker Job: Password: ${password} & Range: ${from} - ${to}")
-    //Thread.sleep(10000)
+    Thread.sleep(10000)
     return s"cracker is done with this result: ${from}, ${to}"
   }
 

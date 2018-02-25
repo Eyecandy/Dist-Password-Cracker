@@ -1,19 +1,20 @@
 package server
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.event.Logging
-import server.WorkerConnection.{ Register}
+import server.WorkerConnection.Register
 import DispatchServer._
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import scala.collection.mutable
 
 /*
   What the SuperVisorActor does:
     - Receives worker-client connection from WebServer and creates a creates WorkerActor (child)
-    Registers the worker then calls a function called worker joins.
-    - Receives ClientRequest from WebServer and queues it. !!!---CHANGE THIS--------!!!
+        schedules for pinging workerClient and schedules for checking (last response time vs current time)
     -
+
+
  */
 
 class SuperVisor extends Actor {
@@ -26,7 +27,8 @@ class SuperVisor extends Actor {
       log.info(s"${nodeName} Requests to join DispatchServer")
       val worker: ActorRef = context.actorOf(WorkerConnection.props,nodeName)
       worker ! Register(nodeName)
-      system.scheduler.schedule(5 seconds,5 seconds,worker,WorkerConnection.Ping())
+      system.scheduler.schedule(0 seconds,5 seconds,worker,WorkerConnection.Ping())
+      system.scheduler.schedule(3 seconds,5 seconds,worker,WorkerConnection.CheckLastResponse())
       requestConnectionManager ! RequestConnectionManager.LookingForJob(worker)
     }
     case QueueWorkerAsIdle(worker:ActorRef) => idleWorkers = worker :: idleWorkers
@@ -37,9 +39,12 @@ class SuperVisor extends Actor {
       idleWorkers.foreach(
         (worker => requestConnection ! RequestConnection.WorkerReadyForWork(worker)))
     }
+    case WorkerConnectionDied(worker) => {
+      idleWorkers = idleWorkers.filter(w => w != worker)
+      worker ! PoisonPill
+    }
   }
 }
-
 object SuperVisor {
   val workerQueue = mutable.Queue[ActorRef]()
   val singletonSuperVisorActor = system.actorOf(Props(new SuperVisor()),"SuperVisor")
@@ -47,4 +52,5 @@ object SuperVisor {
   case class ReportJobCompletion(result:String,worker:ActorRef)
   case class FindMeAWorker(requestConnection: ActorRef)
   case class QueueWorkerAsIdle(worker:ActorRef)
+  case class WorkerConnectionDied(worker:ActorRef)
 }

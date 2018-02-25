@@ -15,6 +15,7 @@ what Client does:
 
 object RequestClient {
   def main(args: Array[String]): Unit = {
+
     implicit val system = ActorSystem()
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
@@ -27,6 +28,7 @@ object RequestClient {
     val nodeNameAndPsw = s"http://${serverHostname}:${serverPort}/request-client?nodeName=${name}&password=${psw}"
     val pinging = s"http://${serverHostname}:${serverPort}/request-client?nodeName=${name}"
     val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = nodeNameAndPsw ))
+
     responseFuture
       .onComplete {
         case Success(res) => println(res)
