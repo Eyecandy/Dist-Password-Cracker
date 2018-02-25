@@ -25,7 +25,6 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
   import RequestConnection._
 
   override def receive: Receive = {
-
     case currentTime() => {
       val nanoSecSinceLastPing = System.currentTimeMillis() - lastPingTime;
       if (nanoSecSinceLastPing > 15000) {

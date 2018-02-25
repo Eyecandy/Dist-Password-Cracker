@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import server.DispatchServer.system
-import server.WorkerConnection.{CheckLastResponse, Ping, Register, SendJobToWorkerClient, UpdateLastResponse}
+import server.WorkerConnection.{CheckLastResponse, Ping, Register, SendJobToWorkerClient, ShutdownMessage, UpdateLastResponse}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -52,6 +52,8 @@ class WorkerConnection extends  Actor{
         SuperVisor.singletonSuperVisorActor ! SuperVisor.WorkerConnectionDied(self)
       }
     }
+    case ShutdownMessage() => WorkerConnection.httpRequestWorkerClientShutdown(nodeName_)
+
   }
 }
 
@@ -63,6 +65,7 @@ def props = Props(new WorkerConnection)
   case class Ping()
   case class UpdateLastResponse()
   case class CheckLastResponse()
+  case class ShutdownMessage()
   implicit val materializer = ActorMaterializer()
   implicit val dispatcher = system.dispatcher
   val port = 8081
@@ -92,6 +95,16 @@ def props = Props(new WorkerConnection)
     responseFuture
       .onComplete {
         case Success(res) => println(res); worker ! UpdateLastResponse()
+        case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
+      }
+  }
+
+  def httpRequestWorkerClientShutdown(nodeName:String): Unit = {
+    val workerAddress = s"http://${nodeName}:${port}/worker-client-shutdown"
+    val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = workerAddress))
+    responseFuture
+      .onComplete {
+        case Success(res) => println(res)
         case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
       }
   }

@@ -5,7 +5,6 @@ import scala.concurrent.Future
 import java.net._
 
 import akka.actor.ActorSystem
-import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
@@ -46,6 +45,11 @@ object WorkerClient extends App {
       } ~
         path("worker-client-ping") {
           println("Worker Pinged")
+          complete(s"Worker: ${localIpAddress} Pinged Successfully")
+        } ~
+        path("worker-client-shutdown") {
+          println("!!!!SERVER SHUTDOWN!!!!")
+          System.exit(0)
           complete(s"Worker: ${localIpAddress} Pinged Successfully")
         }
     }

@@ -1,9 +1,10 @@
 package server
 
-import akka.actor.{ActorRef, ActorSelection, ActorSystem}
+import akka.actor.{ActorRef, ActorSelection, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
+
 import scala.io.StdIn
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
@@ -17,11 +18,14 @@ import server.SuperVisor.WorkerRequestToJoin
  */
 
 object DispatchServer extends App {
+
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   implicit val dispatcher = system.dispatcher
   val superVisorActor: ActorRef = SuperVisor.singletonSuperVisorActor
   val requestConnectionManager: ActorRef =  RequestConnectionManager.singletonRequestConnectionManger
+  val shutdown = system.actorOf(ShutDown.props)
+  shutdown ! ShutDown.WaitForInput()
   val route: Route = {
     get {
       path("request-client") {

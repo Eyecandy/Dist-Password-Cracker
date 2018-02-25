@@ -26,6 +26,7 @@ class SuperVisor extends Actor {
   val log = Logging(context.system, this)
   var idleWorkers = List[ActorRef]()
 
+
   override def receive: Receive = {
     case WorkerRequestToJoin(nodeName) => {
       log.info(s"${nodeName} Requests to join DispatchServer")
@@ -47,6 +48,9 @@ class SuperVisor extends Actor {
       idleWorkers = idleWorkers.filter(w => w != worker)
       worker ! PoisonPill
     }
+    case Shutdown() =>
+      context.children.foreach(worker => worker ! WorkerConnection.ShutdownMessage())
+
   }
 }
 object SuperVisor {
@@ -57,4 +61,5 @@ object SuperVisor {
   case class FindMeAWorker(requestConnection: ActorRef)
   case class QueueWorkerAsIdle(worker:ActorRef)
   case class WorkerConnectionDied(worker:ActorRef)
+  case class Shutdown()
 }
