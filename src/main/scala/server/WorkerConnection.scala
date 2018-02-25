@@ -15,10 +15,15 @@ import scala.util.{Failure, Success, Try}
 
 /*
   What WorkerConnectionActor (child of SuperVisorActor) does:
-    - Register nodeName for the worker client's connection
-    - sends (password,from, to) to actual worker client
-    - !!!!Should be able to get and set idle status!!!!
-    - !!!Should be able to set and get from and to (range)!!!
+    - Register: nodeName for the worker client's connection is registered
+    - SendJobToWorkerClient:
+      saves all info to inside the WorkerConnection
+      then send (password,from, to) to the actual worker client
+    - Ping:send ping to worker
+    - UpdateLastResponse: update time of last response from worker
+    - CheckLastResponse: scheduled to check current time vs last response time
+
+
  */
 class WorkerConnection extends  Actor{
   var nodeName_ =""

@@ -16,7 +16,6 @@ import scala.concurrent.duration._
     - LookingForJob:
       Worker comes in looking for job i.e  if a requestConnection exist a job must exist
       if it exists send worker reference to the job
-
  */
 
 class RequestConnectionManager extends Actor {

@@ -10,10 +10,14 @@ import scala.collection.mutable
 
 /*
   What the SuperVisorActor does:
-    - Receives worker-client connection from WebServer and creates a creates WorkerActor (child)
+    - WorkerRequestToJoin: Receives worker-client connection from WebServer and creates a creates WorkerActor (child)
         schedules for pinging workerClient and schedules for checking (last response time vs current time)
-    -
-
+        the worker is then sent to requestConnectionManager, which will try and find it a job.
+     - QueueWorkerAsIdle:
+       this is sent from RequestConnectionManager if no job is avail and job is put idleWorkers list.
+     - ReportJobCompletion: worker will ask for a job from requestConnectionManger again upon completing a job.
+     - FindMeAWorker: Is sent from RequestConnectionManager,if there are idleWorkers all of them will be assigned a job
+     - WorkerConnectionDied: If a worker is dead will remove him from idleWorkers if he was idle and then kill the actor.
 
  */
 

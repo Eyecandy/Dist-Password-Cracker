@@ -14,7 +14,6 @@ import server.SuperVisor.WorkerRequestToJoin
     - Opens a port for clients to connect to.
     - Receives request-client connections and forwards the information to  RequestConnectionManager.
     - Receives worker-client connections and forwards the information  to the SuperVisor Actor.
-
  */
 
 object DispatchServer extends App {
