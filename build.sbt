@@ -5,7 +5,7 @@ lazy val root = (project in file(".")).
     name := "CrackerSystem",
     version := "0.1",
     scalaVersion := "2.12.4",
-    mainClass in Compile := Some("Main")
+    mainClass in Compile := Some("MyMain")
   )
 
 libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.0.11"

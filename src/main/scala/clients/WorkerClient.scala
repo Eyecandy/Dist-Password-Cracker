@@ -34,14 +34,18 @@ object WorkerClient extends App {
     val serverPort = 8080
     val name = localIpAddress
     val serverAddress = s"http://${serverHostname}:${serverPort}/worker-client?nodeName=${name}"
-
+    def callCracker(password: String, from: String, to: String): String = {
+      println(s"Received Cracker Job: Password: ${password} & Range: ${from} - ${to}")
+      Thread.sleep(10000)
+      return s"cracker is done with this result: ${from}, ${to}"
+    }
     val route: Route = {
       get {
         path("worker-client") {
           parameters("password", "from", "to") { (password, from, to) =>
             println("ack job")
-            //val x = callCracker(password,from,to)
-            complete("hi")
+
+            complete(callCracker(password,from,to))
           }
         } ~
           path("worker-client-ping") {
@@ -54,12 +58,6 @@ object WorkerClient extends App {
             complete(s"Worker: ${localIpAddress} Pinged Successfully")
           }
       }
-    }
-
-    def callCracker(password: String, from: String, to: String): String = {
-      println(s"Received Cracker Job: Password: ${password} & Range: ${from} - ${to}")
-      Thread.sleep(10000)
-      return s"cracker is done with this result: ${from}, ${to}"
     }
 
 
@@ -82,5 +80,6 @@ object WorkerClient extends App {
         case Failure(_) => sys.error("something wrong")
       }
   }
+
 
 }
