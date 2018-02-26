@@ -30,7 +30,8 @@ object WorkerClient extends App {
   val localhost: InetAddress = InetAddress.getLocalHost
   val localIpAddress: String = localhost.getHostAddress
   val workerPort = 8081
-  val serverHostname = "localhost"
+  println("Type in server address: ")
+  val serverHostname = StdIn.readLine();
   val serverPort = 8080
   val name = localIpAddress
   val serverAddress = s"http://${serverHostname}:${serverPort}/worker-client?nodeName=${name}"
@@ -60,10 +61,11 @@ object WorkerClient extends App {
     return s"cracker is done with this result: ${from}, ${to}"
   }
 
+
   Http().bindAndHandleAsync(Route.asyncHandler(route), localIpAddress, workerPort)
     .onComplete {
       case Success(_) ⇒
-        println("Server started on port 8080. Type ENTER to terminate.")
+        println(s"Worker started on ${localIpAddress}, port 8080 . Type ENTER to terminate.")
         StdIn.readLine()
         system.terminate()
       case Failure(e) ⇒

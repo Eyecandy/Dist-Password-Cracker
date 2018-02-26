@@ -1,5 +1,7 @@
 package server
 
+import java.net.InetAddress
+
 import akka.actor.{ActorRef, ActorSelection, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
@@ -22,6 +24,8 @@ object DispatchServer extends App {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   implicit val dispatcher = system.dispatcher
+  val localhost: InetAddress = InetAddress.getLocalHost
+  val localIpAddress: String = localhost.getHostAddress
   val superVisorActor: ActorRef = SuperVisor.singletonSuperVisorActor
   val requestConnectionManager: ActorRef =  RequestConnectionManager.singletonRequestConnectionManger
   val shutdown = system.actorOf(ShutDown.props)
@@ -48,10 +52,10 @@ object DispatchServer extends App {
     }
   }
 
-  Http().bindAndHandleAsync(Route.asyncHandler(route), "localhost", 8080)
+  Http().bindAndHandleAsync(Route.asyncHandler(route),"localhost", 8080)
     .onComplete {
       case Success(_) ⇒
-        println("Server started on port 8080. Type ENTER to terminate.")
+        println(s"Server started on ${localIpAddress} port 8080. Type ENTER to terminate.")
         StdIn.readLine()
         system.terminate()
       case Failure(e) ⇒

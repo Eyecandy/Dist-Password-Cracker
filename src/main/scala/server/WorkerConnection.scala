@@ -22,8 +22,6 @@ import scala.util.{Failure, Success, Try}
     - Ping:send ping to worker
     - UpdateLastResponse: update time of last response from worker
     - CheckLastResponse: scheduled to check current time vs last response time
-
-
  */
 class WorkerConnection extends  Actor{
   var nodeName_ =""
