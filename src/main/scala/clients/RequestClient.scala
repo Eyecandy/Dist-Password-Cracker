@@ -1,9 +1,13 @@
+package clients
+
+
+import java.net._
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
-import java.net._
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
@@ -14,7 +18,7 @@ what Client does:
 */
 
 object RequestClient {
-  def main(args: Array[String]): Unit = {
+  def start(): Unit = {
 
     implicit val system = ActorSystem()
     implicit val materializer = ActorMaterializer()

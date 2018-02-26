@@ -32,7 +32,7 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
         self ! PoisonPill
       }
     }
-    case ping() => lastPingTime = System.currentTimeMillis()
+    case ping() => lastPingTime = System.currentTimeMillis();println("ping")
 
     case WorkerReadyForWork(worker) =>
       if (failedWork.nonEmpty) {
@@ -49,7 +49,7 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
         }
       }
 
-    case WorkerDied(range:Range) => range :: failedWork
+    case WorkerDied(range:Range) => failedWork = range :: failedWork
 
     case _ => throw new Exception("Don't understand what is being sent to me!!")
   }

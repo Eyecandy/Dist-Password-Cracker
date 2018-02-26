@@ -19,7 +19,7 @@ import server.SuperVisor.WorkerRequestToJoin
     - Receives worker-client connections and forwards the information  to the SuperVisor Actor.
  */
 
-object DispatchServer extends App {
+object DispatchServer  {
 
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
@@ -28,39 +28,41 @@ object DispatchServer extends App {
   val localIpAddress: String = localhost.getHostAddress
   val superVisorActor: ActorRef = SuperVisor.singletonSuperVisorActor
   val requestConnectionManager: ActorRef =  RequestConnectionManager.singletonRequestConnectionManger
-  val shutdown = system.actorOf(ShutDown.props)
-  shutdown ! ShutDown.WaitForInput()
-  val route: Route = {
-    get {
-      path("request-client") {
-        parameters("nodeName", "password") { (nodeName, password) ⇒
-          requestConnectionManager ! RequestConnectionManager.Register(nodeName,password)
-          complete(s"Server registered you $nodeName and you password job: ${password}")
+  def start() {
+    val shutdown = system.actorOf(ShutDown.props)
+    shutdown ! ShutDown.WaitForInput()
+    val route: Route = {
+      get {
+        path("request-client") {
+          parameters("nodeName", "password") { (nodeName, password) ⇒
+            requestConnectionManager ! RequestConnectionManager.Register(nodeName, password)
+            complete(s"Server registered you $nodeName and you password job: ${password}")
+          } ~
+            parameter("nodeName") { nodeName ⇒
+              val nodeActor: ActorSelection = system.actorSelection(s"akka://default/user/RequestConnectionManager/${nodeName}")
+              nodeActor ! RequestConnection.ping()
+              complete(s"Ping (${nodeActor}) was registered by server.")
+            }
         } ~
-          parameter("nodeName") { nodeName ⇒
-            val nodeActor: ActorSelection = system.actorSelection(s"akka://default/user/RequestConnectionManager/${nodeName}")
-            nodeActor ! RequestConnection.ping()
-            complete(s"Ping (${nodeActor}) was registered by server.")
+          path("worker-client") {
+            parameters("nodeName") { (nodeName) =>
+              superVisorActor ! WorkerRequestToJoin(nodeName)
+              complete(s"worker registered")
+            }
           }
-      } ~
-      path("worker-client") {
-        parameters("nodeName")  { (nodeName) =>
-          superVisorActor ! WorkerRequestToJoin(nodeName)
-          complete(s"worker registered")
-        }
       }
     }
-  }
 
-  Http().bindAndHandleAsync(Route.asyncHandler(route),"localhost", 8080)
-    .onComplete {
-      case Success(_) ⇒
-        println(s"Server started on ${localIpAddress} port 8080. Type ENTER to terminate.")
-        StdIn.readLine()
-        system.terminate()
-      case Failure(e) ⇒
-        println("Binding failed.")
-        e.printStackTrace
-        system.terminate()
-    }
+    Http().bindAndHandleAsync(Route.asyncHandler(route), "localhost", 8080)
+      .onComplete {
+        case Success(_) ⇒
+          println(s"Server started on ${localIpAddress} port 8080. Type ENTER to terminate.")
+          StdIn.readLine()
+          system.terminate()
+        case Failure(e) ⇒
+          println("Binding failed.")
+          e.printStackTrace
+          system.terminate()
+      }
+  }
 }
