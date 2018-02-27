@@ -62,7 +62,7 @@ class WorkerConnection extends  Actor{
     val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = workerAddress))
     responseFuture
       .onComplete {
-        case Success(res) => println(res); worker ! UpdateLastResponse()
+        case Success(res) => worker ! UpdateLastResponse()
         case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
       }
   }

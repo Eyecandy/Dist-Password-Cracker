@@ -4,7 +4,7 @@ package server
    Updates the range of requestConnections.
  */
 
-object RangeUpdater extends App{
+class RangeUpdater {
   def start(range:String): Option[String]= {
     var end = false
     val vec = range.toVector

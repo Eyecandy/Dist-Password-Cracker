@@ -53,7 +53,7 @@ object DispatchServer  {
       }
     }
 
-    Http().bindAndHandleAsync(Route.asyncHandler(route), "localhost", 8080)
+    Http().bindAndHandleAsync(Route.asyncHandler(route), localIpAddress, 8080)
       .onComplete {
         case Success(_) ⇒
           println(s"Server started on ${localIpAddress} port 8080. Type ENTER to terminate.")

@@ -9,6 +9,7 @@ import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.Future
+import scala.io.StdIn
 import scala.util.{Failure, Success}
 
 /*
@@ -25,7 +26,7 @@ object RequestClient {
     implicit val executionContext = system.dispatcher
     val localhost: InetAddress = InetAddress.getLocalHost
     val localIpAddress = localhost.getHostAddress
-    val serverHostname = "localhost"
+    val serverHostname = StdIn.readLine();
     val serverPort = "8080"
     val name = localIpAddress
     val psw = "password123"

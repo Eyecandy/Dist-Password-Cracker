@@ -22,6 +22,7 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
   var lastPingTime = pingTime;
   val log = Logging(context.system, this)
   var failedWork = List[Range]()
+  val rangeUpdate = new RangeUpdater()
   import RequestConnection._
 
   override def receive: Receive = {
@@ -32,7 +33,7 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
         self ! PoisonPill
       }
     }
-    case ping() => lastPingTime = System.currentTimeMillis();println("ping")
+    case ping() => lastPingTime = System.currentTimeMillis()
 
     case WorkerReadyForWork(worker) =>
       if (failedWork.nonEmpty) {
@@ -42,7 +43,7 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
       }
       else {
         worker ! SendJobToWorkerClient(password,range.from,range.to,self)
-        val newTo = RangeUpdater.start(range.to)
+        val newTo = rangeUpdate.start(range.to)
         newTo.isDefined match {
           case true => range = Range(range.to,newTo.get)
           case false => log.error("RangeUpdate FAILED, NONE Value returned")
