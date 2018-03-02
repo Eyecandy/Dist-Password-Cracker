@@ -31,7 +31,7 @@ object WorkerClient extends App {
     val localIpAddress: String = localhost.getHostAddress
     val workerPort = 8081
     println("Type in server address: ")
-    val serverHostname = "localhost"
+    val serverHostname = StdIn.readLine()
     val serverPort = 8080
     val name = localIpAddress
     val serverAddress = s"http://${serverHostname}:${serverPort}/worker-client?nodeName=${name}"

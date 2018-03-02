@@ -43,9 +43,7 @@ class RequestConnectionManager extends Actor {
           supervisor ! SuperVisor.QueueWorkerAsIdle(worker)
       }
     case Dequeue(psw) => context.children.head ! RequestConnection.DecryptedPassword(psw)
-
   }
-
 }
 
 object RequestConnectionManager {
@@ -53,5 +51,4 @@ object RequestConnectionManager {
   case class Register(nodeName:String,password:String)
   case class LookingForJob(worker:ActorRef)
   case class Dequeue(psw:String)
-
 }

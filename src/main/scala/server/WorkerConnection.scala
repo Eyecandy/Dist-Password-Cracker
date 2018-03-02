@@ -88,7 +88,7 @@ class WorkerConnection extends  Actor{
       log.info(s"Dispatcher assigns ${nodeName_} the job: psw: ${password} & range:${from}-${to}")
       httpRequestWorkerClient(password,from,to,nodeName_,self)
     }
-    case Ping() => println(range);httpRequestWorkerClientPing(nodeName_,self);
+    case Ping() => httpRequestWorkerClientPing(nodeName_,self);
     case UpdateLastResponse() => lastResponse = System.currentTimeMillis()
     case CheckLastResponse() => {
       if (System.currentTimeMillis() - lastResponse > 15000) {

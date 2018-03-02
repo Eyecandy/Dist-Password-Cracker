@@ -30,10 +30,8 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
   val rangeUpdate = new RangeUpdater()
   import RequestConnection._
   val requestClientPort = 8082
-
   implicit val system = DispatchServer.system
   implicit val dispatcher =  DispatchServer.dispatcher
-
 
   def httpRequestDecyptedPsw(decrypted_password:String): Unit = {
     val formated = decrypted_password.toList.reverse.tail.reverse.mkString("")
@@ -44,7 +42,6 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
         case Success(res) =>
           println(s"---Important--- given password to ${nodeName}: res Entity: ",res.entity)
           context.stop(self)
-
         case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
       }
   }
@@ -57,7 +54,7 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
         context.stop(self)
       }
     }
-    case ping() => lastPingTime = System.currentTimeMillis(); println(s"Request connection At range: ${range}")
+    case ping() => lastPingTime = System.currentTimeMillis()
 
     case WorkerReadyForWork(worker) =>
 
@@ -74,8 +71,8 @@ class RequestConnection(nodeName: String, password: String, pingTime: Long) exte
           case false => log.error("RangeUpdate FAILED, NONE Value returned")
         }
       }
-
     case WorkerDied(range:Range) => failedWork = range :: failedWork;
+
     case DecryptedPassword(psw) => httpRequestDecyptedPsw(psw)
 
     case _ => throw new Exception("Don't understand what is being sent to me!!")
@@ -89,14 +86,4 @@ object RequestConnection {
   case class WorkerReadyForWork(worker:ActorRef)
   case class WorkerDied(range:Range)
   case class DecryptedPassword(psw:String)
-
 }
-
-
-
-
-
-
-
-
-

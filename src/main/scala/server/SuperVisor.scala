@@ -18,14 +18,12 @@ import scala.collection.mutable
      - ReportJobCompletion: worker will ask for a job from requestConnectionManger again upon completing a job.
      - FindMeAWorker: Is sent from RequestConnectionManager,if there are idleWorkers all of them will be assigned a job
      - WorkerConnectionDied: If a worker is dead will remove him from idleWorkers if he was idle and then kill the actor.
-
  */
 
 class SuperVisor extends Actor {
   import server.SuperVisor._
   val log = Logging(context.system, this)
   var idleWorkers = List[ActorRef]()
-
 
   override def receive: Receive = {
     case WorkerRequestToJoin(nodeName) => {
@@ -65,5 +63,4 @@ object SuperVisor {
   case class QueueWorkerAsIdle(worker:ActorRef)
   case class WorkerConnectionDied(worker:ActorRef)
   case class Shutdown()
-
 }

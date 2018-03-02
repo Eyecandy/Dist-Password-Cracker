@@ -23,6 +23,9 @@ import scala.language.postfixOps
 what Client does:
  - Sends the ip of the node it is running to the server.
  - Pings the server every 5 seconds .
+ - opens a port for server to send a the decrypted password to. Stops pinging upon recv.
+
+
 */
 
 object RequestClient  {
@@ -33,7 +36,10 @@ object RequestClient  {
     implicit val executionContext = system.dispatcher
     val localhost: InetAddress = InetAddress.getLocalHost
     val localIpAddress = localhost.getHostAddress
-    val serverHostname = "localhost"
+    println("type in server's address to connect to it.")
+    val serverHostname = StdIn.readLine()
+    println("Type in encrypted password: (compile encrypt & type in a password to get a valid hashed password):")
+    val encryptedPsw = StdIn.readLine()
     val serverPort = "8080"
     val name = localIpAddress
     var doPing = true;
@@ -50,7 +56,7 @@ object RequestClient  {
     Http().bindAndHandleAsync(Route.asyncHandler(route), localIpAddress, 8082)
       .onComplete {
         case Success(_) ⇒
-          println(s"Worker started on ${localIpAddress}, port 8080 . Type ENTER to terminate.")
+          println(s"RequestClient started on ${localIpAddress}, port 8080 . Type ENTER to terminate.")
           StdIn.readLine()
           system.terminate()
         case Failure(e) ⇒
@@ -59,8 +65,7 @@ object RequestClient  {
           system.terminate()
       }
 
-    println("Type in encrypted password:")
-    val encryptedPsw = "icRIRnlhvLRx."
+
 
 
     val nodeNameAndPsw = s"http://${serverHostname}:${serverPort}/request-client?nodeName=${name}&password=${encryptedPsw}"

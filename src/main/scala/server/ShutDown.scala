@@ -19,8 +19,6 @@ class ShutDown extends Actor{
             System.exit(0)
           case _ => println("Bad input")
         }
-
-
       }
     }
   }
