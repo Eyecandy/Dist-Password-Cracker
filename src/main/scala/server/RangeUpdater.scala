@@ -9,14 +9,14 @@ class RangeUpdater {
     var end = false
     val vec = range.toVector
     if (vec(0) =='9')
-      if (vec.mkString("").equals("999AAAAA")) {
+      if (vec.mkString("").equals("99999999")) {
         end = true
       }
     if (end) {
       None
     }
     else {
-      Some(create(vec,2).mkString(""))
+      Some(create(vec,3).mkString(""))
     }
   }
 

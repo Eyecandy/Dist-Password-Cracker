@@ -9,7 +9,5 @@ int main(int argc, char *argv[]) {
 
 	DES_fcrypt(argv[1],"ic",data);
 	printf("%s\n",data);
-    int x = !strncmp(data,"icIIvSfDpEGgY", 13);
-    printf("%d",x);
 	return 0;
 }

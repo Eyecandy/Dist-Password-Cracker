@@ -56,7 +56,7 @@ object DispatchServer  {
     Http().bindAndHandleAsync(Route.asyncHandler(route), localIpAddress, 8080)
       .onComplete {
         case Success(_) ⇒
-          println(s"Server started on ${localIpAddress} port 8080. Type ENTER to terminate.")
+          println(s"Dispatch Server started on ${localIpAddress} port 8080. Type ENTER to terminate.")
           StdIn.readLine()
           system.terminate()
         case Failure(e) ⇒

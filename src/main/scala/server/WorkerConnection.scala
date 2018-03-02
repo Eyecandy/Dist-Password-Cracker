@@ -43,11 +43,12 @@ class WorkerConnection extends  Actor{
     responseFuture
       .onComplete {
         case Success(res) => {
+
           val marshalFuture: Future[String] = Unmarshal(res.entity).to[String]
           val marshalResult: Option[Try[String]] = marshalFuture.value
-          if (marshalResult.isDefined && marshalResult.get.isSuccess) {
-            println(res.entity)
-            DispatchServer.superVisorActor ! SuperVisor.ReportJobCompletion(marshalResult.get.get,worker)
+          if (marshalResult.isDefined && marshalResult.get.isSuccess && res.status.intValue() == 200) {
+
+            DispatchServer.superVisorActor ! SuperVisor.ReportJobCompletion(marshalResult.get.get,worker,res.status.intValue())
           }
           else {
             throw new Exception("Marshalling failed & you might need to redo this job")
@@ -73,7 +74,7 @@ class WorkerConnection extends  Actor{
     responseFuture
       .onComplete {
         case Success(res) => println(res)
-        case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
+        case Failure(_) => throw new Exception(s"WorkerConnection shutdown ${nodeName} fails!")
       }
   }
 
@@ -87,12 +88,13 @@ class WorkerConnection extends  Actor{
       log.info(s"Dispatcher assigns ${nodeName_} the job: psw: ${password} & range:${from}-${to}")
       httpRequestWorkerClient(password,from,to,nodeName_,self)
     }
-    case Ping() => httpRequestWorkerClientPing(nodeName_,self)
+    case Ping() => httpRequestWorkerClientPing(nodeName_,self);
     case UpdateLastResponse() => lastResponse = System.currentTimeMillis()
     case CheckLastResponse() => {
       if (System.currentTimeMillis() - lastResponse > 15000) {
         requestClient_ ! RequestConnection.WorkerDied(range)
         SuperVisor.singletonSuperVisorActor ! SuperVisor.WorkerConnectionDied(self)
+        context.stop(self)
       }
     }
     case ShutdownMessage() => httpRequestWorkerClientShutdown(nodeName_)

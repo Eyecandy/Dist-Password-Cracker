@@ -7,17 +7,18 @@ import scala.io.StdIn
 class ShutDown extends Actor{
   override def receive: Receive = {
     case WaitForInput() => {
-      val shutdownNumber = 123
+
       while (true) {
         val input = StdIn.readInt()
-        if (input == shutdownNumber){
-          SuperVisor.singletonSuperVisorActor ! SuperVisor.Shutdown()
-          println("shutdown in 10 seconds")
-          Thread.sleep(10)
-          println("shutdown")
-          System.exit(0)
+        input match {
+          case 123 =>
+            SuperVisor.singletonSuperVisorActor ! SuperVisor.Shutdown()
+            println("shutdown in 10 seconds")
+            Thread.sleep(10)
+            println("shutdown")
+            System.exit(0)
+          case _ => println("Bad input")
         }
-
       }
     }
   }
@@ -26,4 +27,5 @@ class ShutDown extends Actor{
 object ShutDown {
   val props = Props(new ShutDown)
   case class WaitForInput()
+
 }

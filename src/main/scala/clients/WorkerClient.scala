@@ -11,8 +11,9 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.Future
 import scala.io.StdIn
-import scala.language.postfixOps
+
 import scala.util.{Failure, Success}
+
 /*
 What the worker does:
   - Opens http port for server
@@ -30,26 +31,29 @@ object WorkerClient extends App {
     val localIpAddress: String = localhost.getHostAddress
     val workerPort = 8081
     println("Type in server address: ")
-    val serverHostname = StdIn.readLine();
+    val serverHostname = StdIn.readLine()
     val serverPort = 8080
     val name = localIpAddress
     val serverAddress = s"http://${serverHostname}:${serverPort}/worker-client?nodeName=${name}"
+    import sys.process._
+    import scala.language.postfixOps
     def callCracker(password: String, from: String, to: String): String = {
+
       println(s"Received Cracker Job: Password: ${password} & Range: ${from} - ${to}")
-      Thread.sleep(10000)
-      return s"cracker is done with this result: ${from}, ${to}"
+
+      def result = (s"./src/main/resources/sshpc ${password} ${from} ${to}" !!)
+      println(s" I GOT ${result.toList}")
+      return s"${result}"
     }
+
     val route: Route = {
       get {
         path("worker-client") {
           parameters("password", "from", "to") { (password, from, to) =>
-            println("ack job")
-
-            complete(callCracker(password,from,to))
+            complete(callCracker(password, from, to))
           }
         } ~
           path("worker-client-ping") {
-            println("Worker Pinged")
             complete(s"Worker: ${localIpAddress} Pinged Successfully")
           } ~
           path("worker-client-shutdown") {
@@ -61,7 +65,7 @@ object WorkerClient extends App {
     }
 
 
-    Http().bindAndHandleAsync(Route.asyncHandler(route), localIpAddress, workerPort)
+    Http().bindAndHandleAsync(Route.asyncHandler(route), localIpAddress, 8081)
       .onComplete {
         case Success(_) ⇒
           println(s"Worker started on ${localIpAddress}, port 8080 . Type ENTER to terminate.")
@@ -72,13 +76,16 @@ object WorkerClient extends App {
           e.printStackTrace
           system.terminate()
       }
-
-    val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = serverAddress))
-    responseFuture
-      .onComplete {
-        case Success(res) => println(res)
-        case Failure(_) => sys.error("something wrong")
-      }
+    var registrationComplete = false
+    while (!registrationComplete) {
+      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = serverAddress))
+      responseFuture
+        .onComplete {
+          case Success(res) => println(res.entity); registrationComplete = true
+          case Failure(_) => throw new Exception("Failed to connect to server")
+        }
+      Thread.sleep(5000)
+    }
   }
 
 
