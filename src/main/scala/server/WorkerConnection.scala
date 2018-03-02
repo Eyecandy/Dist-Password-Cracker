@@ -31,43 +31,12 @@ class WorkerConnection extends  Actor{
   val log = Logging(context.system, this)
   var lastResponse = System.currentTimeMillis()
   var requestClient_ : ActorRef = ActorRef.noSender
+  implicit val materializer = DispatchServer.materializer
+  implicit val dispatcher =  DispatchServer.dispatcher
 
-  override def receive: Receive = {
-    case Register(nodeName) => nodeName_ = nodeName
-    case SendJobToWorkerClient(password,from,to,requestClient:ActorRef) => {
-      requestClient_ = requestClient
-      currentPasswordJob = password
-      range = Range(from,to)
-      idle = false
-      log.info(s"Dispatcher assigns ${nodeName_} the job: psw: ${password} & range:${from}-${to}")
-      WorkerConnection.httpRequestWorkerClient(password,from,to,nodeName_,self)
-    }
-    case Ping() => WorkerConnection.httpRequestWorkerClientPing(nodeName_,self)
-    case UpdateLastResponse() => lastResponse = System.currentTimeMillis()
-    case CheckLastResponse() => {
-      if (System.currentTimeMillis() - lastResponse > 15000) {
-        requestClient_ ! RequestConnection.WorkerDied(range)
-        SuperVisor.singletonSuperVisorActor ! SuperVisor.WorkerConnectionDied(self)
-      }
-    }
-    case ShutdownMessage() => WorkerConnection.httpRequestWorkerClientShutdown(nodeName_)
 
-  }
-}
-
-object WorkerConnection {
-
-def props = Props(new WorkerConnection)
-  case class SendJobToWorkerClient(password:String, from:String, to:String,requestClient:ActorRef)
-  case class Register(nodeName:String)
-  case class Ping()
-  case class UpdateLastResponse()
-  case class CheckLastResponse()
-  case class ShutdownMessage()
-  implicit val materializer = ActorMaterializer()
-  implicit val dispatcher = system.dispatcher
   val port = 8081
-  
+
   def httpRequestWorkerClient(password:String,from:String,to:String, nodeName:String, worker:ActorRef): Unit = {
     val workerAddress = s"http://${nodeName}:${port}/worker-client?password=${password}&from=${from}&to=${to}"
     val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = workerAddress))
@@ -77,6 +46,7 @@ def props = Props(new WorkerConnection)
           val marshalFuture: Future[String] = Unmarshal(res.entity).to[String]
           val marshalResult: Option[Try[String]] = marshalFuture.value
           if (marshalResult.isDefined && marshalResult.get.isSuccess) {
+            println(res.entity)
             DispatchServer.superVisorActor ! SuperVisor.ReportJobCompletion(marshalResult.get.get,worker)
           }
           else {
@@ -92,7 +62,7 @@ def props = Props(new WorkerConnection)
     val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = workerAddress))
     responseFuture
       .onComplete {
-        case Success(res) => println(res); worker ! UpdateLastResponse()
+        case Success(res) => worker ! UpdateLastResponse()
         case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
       }
   }
@@ -106,4 +76,39 @@ def props = Props(new WorkerConnection)
         case Failure(_) => throw new Exception("WorkerConnection Ping fails!")
       }
   }
+
+  override def receive: Receive = {
+    case Register(nodeName) => nodeName_ = nodeName
+    case SendJobToWorkerClient(password,from,to,requestClient:ActorRef) => {
+      requestClient_ = requestClient
+      currentPasswordJob = password
+      range = Range(from,to)
+      idle = false
+      log.info(s"Dispatcher assigns ${nodeName_} the job: psw: ${password} & range:${from}-${to}")
+      httpRequestWorkerClient(password,from,to,nodeName_,self)
+    }
+    case Ping() => httpRequestWorkerClientPing(nodeName_,self)
+    case UpdateLastResponse() => lastResponse = System.currentTimeMillis()
+    case CheckLastResponse() => {
+      if (System.currentTimeMillis() - lastResponse > 15000) {
+        requestClient_ ! RequestConnection.WorkerDied(range)
+        SuperVisor.singletonSuperVisorActor ! SuperVisor.WorkerConnectionDied(self)
+      }
+    }
+    case ShutdownMessage() => httpRequestWorkerClientShutdown(nodeName_)
+
+  }
+}
+
+object WorkerConnection {
+
+def props = Props(new WorkerConnection)
+  case class SendJobToWorkerClient(password:String, from:String, to:String,requestClient:ActorRef)
+  case class Register(nodeName:String)
+  case class Ping()
+  case class UpdateLastResponse()
+  case class CheckLastResponse()
+  case class ShutdownMessage()
+
+
 }
