@@ -2,7 +2,7 @@
 A distributed system which attempts to crack DES-encrypted password. (Given as an assignment in big data technologies)
 
 # Overview
-The goal of the project is to create a scalable, efficeint and robust distributed system to crack DES-encrypted password jobs. The Project has 3 major components;request clients,dispatch server and worker clients. The request clients sends password jobs to the dispatch server, then dispatcher server dispatches smaller parts of the jobs to the workers. The distributed system was created in scala with the akka framework and the cracker in C. I the above (scala with akka) for scaalabilty and C for effeciency. 
+The goal of the project is to create a scalable, efficient and robust distributed system to crack DES-encrypted password jobs. The Project has 3 major components;request clients,dispatch server and worker clients. The request clients sends password jobs to the dispatch server, then dispatcher server dispatches smaller parts of the jobs to the workers. The distributed system was created in scala with the akka framework and the cracker in C. I the above (scala with akka) for scalabilty and C for efficiency. 
 
 # Flow
 - worker joins: it will notify its presence and get a sub job of a request client if it exists. And the server will ping it.
@@ -25,7 +25,7 @@ The goal of the project is to create a scalable, efficeint and robust distribute
 #Compatibilty
  - the crypt function used in sshpc.c works on linux & mac OS.
 
-Shoutout to Pithikos for the thread pool implementation
+Shout out to Pithikos for the thread pool implementation
     - https://github.com/Pithikos/C-Thread-Pool
  
 
