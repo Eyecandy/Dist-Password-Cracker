@@ -12,6 +12,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.0.11"
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % "2.5.9"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.9"
 libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.0-RC1"
+libraryDependencies += "commons-codec" % "commons-codec" % "1.6"
 
 
 

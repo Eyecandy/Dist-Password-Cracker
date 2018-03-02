@@ -1,6 +1,6 @@
 package server
 
-import akka.actor.{Actor, ActorRef, PoisonPill, Props}
+import akka.actor.{Actor, ActorRef, Kill, PoisonPill, Props}
 import akka.event.Logging
 import server.WorkerConnection.Register
 import DispatchServer._
@@ -32,34 +32,38 @@ class SuperVisor extends Actor {
       log.info(s"${nodeName} Requests to join DispatchServer")
       val worker: ActorRef = context.actorOf(WorkerConnection.props,nodeName)
       worker ! Register(nodeName)
-      system.scheduler.schedule(0 seconds,5 seconds,worker,WorkerConnection.Ping())
-      system.scheduler.schedule(3 seconds,5 seconds,worker,WorkerConnection.CheckLastResponse())
+      system.scheduler.schedule(5 seconds,5 seconds,worker,WorkerConnection.Ping())
+      system.scheduler.schedule(8 seconds,5 seconds,worker,WorkerConnection.CheckLastResponse())
       requestConnectionManager ! RequestConnectionManager.LookingForJob(worker)
     }
     case QueueWorkerAsIdle(worker:ActorRef) => idleWorkers = worker :: idleWorkers
-    case ReportJobCompletion(result:String,worker:ActorRef)  => {
+    case ReportJobCompletion(result:String,worker:ActorRef,resStatus)  => {
+      if (result.charAt(0) != '!' && resStatus == 200) {
+        requestConnectionManager ! RequestConnectionManager.Dequeue(result)
+      }
       requestConnectionManager ! RequestConnectionManager.LookingForJob(worker)
     }
     case FindMeAWorker(requestConnection) => {
       idleWorkers.foreach(
         (worker => requestConnection ! RequestConnection.WorkerReadyForWork(worker)))
     }
-    case WorkerConnectionDied(worker) => {
+    case WorkerConnectionDied(worker:ActorRef) => {
       idleWorkers = idleWorkers.filter(w => w != worker)
+      log.error(s"Killling worker actor ${worker} ")
       worker ! PoisonPill
     }
     case Shutdown() =>
       context.children.foreach(worker => worker ! WorkerConnection.ShutdownMessage())
-
   }
 }
 object SuperVisor {
   val workerQueue = mutable.Queue[ActorRef]()
   val singletonSuperVisorActor = system.actorOf(Props(new SuperVisor()),"SuperVisor")
   case class WorkerRequestToJoin(nodeName: String)
-  case class ReportJobCompletion(result:String,worker:ActorRef)
+  case class ReportJobCompletion(result:String,worker:ActorRef,resStatus:Int)
   case class FindMeAWorker(requestConnection: ActorRef)
   case class QueueWorkerAsIdle(worker:ActorRef)
   case class WorkerConnectionDied(worker:ActorRef)
   case class Shutdown()
+
 }
