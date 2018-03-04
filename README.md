@@ -13,17 +13,19 @@ The goal of the project is to create a scalable, efficient and robust distribute
 - if server is shutdown on purpose, all workers will get a shutdown message and suicide.
 
 # How to run:
-  - start: MyMain
+  - go to: root/src/main/resources and run the Make file: 'Make'
+  - sbt assembly: to create a jar.
+  - distribute it to different computers
+  - scala <name of jar>: to run jar
   - type in 'd' for dispatcher to start
   - type in 'r' for request client to start
   - type in 'w' for worker to start
   - type in '123' to shutdown server.
-  - sbt assembly to create a jar.
   
   
-
+  
 #Compatibilty
- - the crypt function used in sshpc.c works on linux & mac OS.
+ - sshpc.c can be compiled on linux & mac OS.
 
 Shout out to Pithikos for the thread pool implementation
     - https://github.com/Pithikos/C-Thread-Pool
