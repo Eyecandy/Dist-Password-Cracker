@@ -41,7 +41,7 @@ object WorkerClient extends App {
 
       println(s"Received Cracker Job: Password: ${password} & Range: ${from} - ${to}")
 
-      def result = (s"./src/main/resources/sshpc ${password} ${from} ${to}" !!)
+      def result = (s"docker run -i cracker ./sshpc ${password} ${from} ${to}" !!)
       println(s" I GOT ${result.toList}")
       return s"${result}"
     }

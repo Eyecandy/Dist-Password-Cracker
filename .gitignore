@@ -6,3 +6,4 @@ target
 .idea
 out
 .DS_Store
+/src/main/resources/lol3.tar

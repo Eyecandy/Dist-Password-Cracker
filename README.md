@@ -13,19 +13,18 @@ The goal of the project is to create a scalable, efficient and robust distribute
 - if server is shutdown on purpose, all workers will get a shutdown message and suicide.
 
 # How to run:
-  - go to: root/src/main/resources and run the Make file: 'Make'
-  - sbt assembly: to create a jar.
-  - distribute it to different computers
+  - download docker
+  - go to: root/src/main/resources and run the command: docker build . -t cracker
+  - docker save cracker > cracker.tar
+  - sbt assembly: to create a fat jar.
+  - for all nodes: distribute the fat jar + run command : docker load -i cracker.tar
   - scala <name of jar>: to run jar
   - type in 'd' for dispatcher to start
   - type in 'r' for request client to start
   - type in 'w' for worker to start
   - type in '123' to shutdown server.
   
-  
-  
-#Compatibilty
- - sshpc.c can be compiled on linux & mac OS.
+ 
 
 Shout out to Pithikos for the thread pool implementation
     - https://github.com/Pithikos/C-Thread-Pool

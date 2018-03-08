@@ -52,6 +52,9 @@ class WorkerConnection extends  Actor{
           }
           else {
             throw new Exception("Marshalling failed & you might need to redo this job")
+            requestClient_ ! RequestConnection.WorkerDied(range)
+            SuperVisor.singletonSuperVisorActor ! SuperVisor.WorkerConnectionDied(self)
+            context.stop(self)
           }
         }
         case Failure(_) => sys.error("something wrong")
